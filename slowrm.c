@@ -43,6 +43,7 @@ void dream()
 int recursive;
 int force;
 int onefs;
+int nofsync;
 gchar **paths;
 
 static GOptionEntry entries[] = {
@@ -56,6 +57,8 @@ static GOptionEntry entries[] = {
      "Continue on errors (by default bail on everything)", NULL},
     {"one-file-system", 'x', 0, G_OPTION_ARG_NONE, &onefs,
      "Only operate on one file system", NULL},
+    {"skip-fsync", 'S', 0, G_OPTION_ARG_NONE, &nofsync,
+     "Don't fsync on sleeps", NULL},
     {G_OPTION_REMAINING, 0, 0, G_OPTION_ARG_FILENAME_ARRAY, &paths},
     {NULL}
 };
@@ -135,8 +138,6 @@ int main(int ac, char **av)
              *
              * Otherwise we will keep doing everything.
              */
-            if (the_counter > chunk)
-                dream();
 
             if (e->fts_statp->st_size > chunk && e->fts_statp->st_nlink <= 1) {
                 /* Large file case.
@@ -166,6 +167,8 @@ int main(int ac, char **av)
                         if (!force)
                             exit(EXIT_FAILURE);
                         break;
+                    } else if (!nofsync) {
+                        fsync(fd);
                     }
                     dream();
                 }
@@ -181,6 +184,15 @@ int main(int ac, char **av)
         default:
             /* Everything else */
             unlink_entry(e);
+        }
+        if (the_counter > chunk) {
+            if (!nofsync) {
+                int fd = open(".", O_DIRECTORY);
+                fsync(fd);
+                if (fd >  -1)
+                    close(fd);
+            }
+            dream();
         }
     }
 
