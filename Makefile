@@ -1,5 +1,5 @@
 CFLAGS=`pkg-config glib-2.0 --cflags` -Wall -g
-LDFLAGS=`pkg-config glib-2.0 --libs`
+LDLIBS=`pkg-config glib-2.0 --libs`
 
 all: slowrm
 
